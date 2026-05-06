@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transcribe — RSUnion</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/htmx.min.js"></script>
+</head>
+<body>
+  <h1>Transcribir Reel / TikTok / Short</h1>
+  <p class="subtitle">Pega el link del video. Devolvemos el texto en su idioma original.</p>
+
+  <form
+    hx-post="/transcribe"
+    hx-target="#result"
+    hx-swap="innerHTML"
+    hx-disabled-elt="button">
+    <label for="url">URL del video</label>
+    <input
+      id="url"
+      class="url"
+      type="url"
+      name="url"
+      required
+      placeholder="https://www.tiktok.com/@usuario/video/...">
+    <button type="submit">
+      Transcribir
+      <span class="spinner">…</span>
+    </button>
+  </form>
+
+  <div id="result" class="result">
+    Pega un link y dale <strong>Transcribir</strong>.
+  </div>
+
+  <footer>
+    Interno RSUnion · Gemini 2.5 Flash · sin almacenamiento
+  </footer>
+</body>
+</html>

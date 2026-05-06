@@ -1,0 +1,7 @@
+{% if error %}
+<span class="meta">Error</span>
+<div class="error-msg">{{ error }}</div>
+{% else %}
+<span class="meta">{{ platform }} · {{ duracion_seg|round(1) }}s · {{ modelo }}</span>
+{{ texto }}
+{% endif %}
