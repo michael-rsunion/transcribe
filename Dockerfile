@@ -1,44 +1,36 @@
-# ----- Builder -----
-FROM python:3.13-slim AS builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir uv==0.5.0
-
-WORKDIR /build
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
-
-# ----- Runtime -----
-FROM python:3.13-slim AS runtime
+FROM python:3.13-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     tini \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:0.5.0 /uv /usr/local/bin/uv
 
 RUN useradd -m -u 1000 app
 WORKDIR /home/app
 
-# Copy venv from builder
-COPY --from=builder --chown=app:app /build/.venv /home/app/.venv
-ENV PATH="/home/app/.venv/bin:$PATH"
+# Install deps (creates /home/app/.venv with correct shebangs in place)
+COPY --chown=app:app pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project \
+    && chown -R app:app /home/app/.venv
 
 # Copy app code
 COPY --chown=app:app app ./app
 
 USER app
+ENV PATH="/home/app/.venv/bin:$PATH"
 
 EXPOSE 8000
 
-# Healthcheck sin curl: usa python stdlib
+# Healthcheck via python stdlib (no curl/wget needed in container path)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health',timeout=3).getcode()==200 else 1)"
+    CMD curl -fsS http://localhost:8000/health || exit 1
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/home/app/.venv/bin/uvicorn", "app.main:app", \
+CMD ["/home/app/.venv/bin/python", "-m", "uvicorn", "app.main:app", \
      "--host", "0.0.0.0", \
      "--port", "8000", \
      "--timeout-graceful-shutdown", "30"]
