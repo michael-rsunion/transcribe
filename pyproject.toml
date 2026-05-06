@@ -1,0 +1,46 @@
+[project]
+name = "transcribe"
+version = "0.1.0"
+description = "Transcripcion interna de Reels/TikToks via Gemini"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "fastapi==0.136.1",
+  "uvicorn[standard]==0.46.0",
+  "yt-dlp==2026.3.17",
+  "google-genai==1.75.0",
+  "jinja2==3.1.6",
+  "python-multipart==0.0.20",
+  "pydantic-settings==2.7.0",
+  "slowapi==0.1.9",
+  "structlog==24.4.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==8.3.0",
+  "pytest-asyncio==0.24.0",
+  "pytest-cov==6.0.0",
+  "httpx==0.28.1",
+  "ruff==0.7.0",
+  "pre-commit==4.0.1",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = ["slow: marks tests as slow (deselect with -m 'not slow')"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E","F","I","UP","B","S"]
+ignore = ["S101","S603","S607"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105","S106","S311"]
+
+[tool.coverage.report]
+fail_under = 70

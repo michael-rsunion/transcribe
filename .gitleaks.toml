@@ -1,0 +1,13 @@
+title = "transcribe gitleaks config"
+
+[allowlist]
+description = "Allow placeholders in .env.example and docs"
+regexes = [
+  '''AIza-set-in-coolify''',
+  '''set-in-coolify-min-24-chars-long-x''',
+  '''set-in-coolify-hex64-set-in-coolify-hex64-set-in-coolify-hex64''',
+]
+paths = [
+  '''docs/specs/.*\.md''',
+  '''docs/superpowers/.*\.md''',
+]

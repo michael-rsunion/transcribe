@@ -1,0 +1,20 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.0
+    hooks:
+      - id: ruff
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: guard-crm-uuid
+        name: Guard CRM uuid leak
+        entry: bash scripts/guard_crm_uuid.sh
+        language: system
+        pass_filenames: false
+        always_run: true
