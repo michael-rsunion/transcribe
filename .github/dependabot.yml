@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-name: "yt-dlp"
+      - dependency-name: "google-genai"
+    open-pull-requests-limit: 5
