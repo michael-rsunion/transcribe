@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.5-flash"
     MAX_INLINE_AUDIO_BYTES: int = 20_000_000
 
+    # Apify (opcional - si esta vacio, Instagram usa yt-dlp como fallback)
+    APIFY_TOKEN: str = ""
+    APIFY_INSTAGRAM_TIMEOUT_SEC: int = 90
+
     # Auth
     BASIC_AUTH_USER: str = Field(min_length=1)
     BASIC_AUTH_PASS: str = Field(min_length=24)

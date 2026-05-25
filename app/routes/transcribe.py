@@ -14,6 +14,7 @@ from app.auth import require_basic_auth
 from app.config import Settings, get_settings
 from app.constants.logging import LOG_KEYS, url_hmac
 from app.constants.messages import ERROR_MESSAGES
+from app.services.apify_downloader import ApifyDownloadError, download_via_apify
 from app.services.audio import AudioError, extract_audio_mp3, probe_duration_sec
 from app.services.cleanup import drop_request_dir, make_request_dir
 from app.services.concurrency import Gate, get_gate
@@ -106,13 +107,22 @@ async def transcribe(
 
     try:
         async def _pipeline():
-            video_path = await asyncio.to_thread(
-                download_video,
-                v.raw,
-                workdir,
-                max_size_mb=settings.MAX_DOWNLOAD_SIZE_MB,
-                socket_timeout=settings.YT_DLP_SOCKET_TIMEOUT_SEC,
-            )
+            # Routing: Instagram via Apify (si hay token); resto via yt-dlp.
+            if v.platform == "instagram" and settings.APIFY_TOKEN:
+                video_path = await download_via_apify(
+                    v.raw,
+                    workdir,
+                    api_token=settings.APIFY_TOKEN,
+                    timeout_sec=settings.APIFY_INSTAGRAM_TIMEOUT_SEC,
+                )
+            else:
+                video_path = await asyncio.to_thread(
+                    download_video,
+                    v.raw,
+                    workdir,
+                    max_size_mb=settings.MAX_DOWNLOAD_SIZE_MB,
+                    socket_timeout=settings.YT_DLP_SOCKET_TIMEOUT_SEC,
+                )
             duration = await probe_duration_sec(
                 video_path, timeout=settings.FFMPEG_TIMEOUT_SEC
             )
@@ -160,10 +170,14 @@ async def transcribe(
                 status_code=e.status_code,
             )
         raise
-    except DownloadError as e:
+    except (DownloadError, ApifyDownloadError) as e:
         logger.warning(
             "transcribe.download_error",
-            **{LOG_KEYS["REQ_ID"]: request_uuid, "reason": str(e)[:120]},
+            **{
+                LOG_KEYS["REQ_ID"]: request_uuid,
+                "source": "apify" if isinstance(e, ApifyDownloadError) else "ytdlp",
+                "reason": str(e)[:120],
+            },
         )
         return _err_response(request, 422, ERROR_MESSAGES["DESCARGA_FALLIDA"])
     except AudioError as e:
