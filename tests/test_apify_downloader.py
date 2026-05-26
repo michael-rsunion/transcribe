@@ -28,9 +28,12 @@ async def test_downloads_video_from_cdn_url(tmp_path, monkeypatch):
         }
     ]
     fake_mp4_content = b"\x00\x00\x00\x20ftypisom" + b"x" * 1000
+    received_payload: dict = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         if "api.apify.com" in str(request.url):
+            import json as _json
+            received_payload.update(_json.loads(request.content))
             return httpx.Response(200, json=fake_apify_response)
         if str(request.url) == cdn_url:
             return httpx.Response(200, content=fake_mp4_content)
@@ -52,6 +55,11 @@ async def test_downloads_video_from_cdn_url(tmp_path, monkeypatch):
     )
     assert out == tmp_path / "v.mp4"
     assert out.read_bytes() == fake_mp4_content
+    # Verifica que pasamos el campo correcto (`username`, no `directUrls`)
+    assert received_payload.get("username") == [
+        "https://www.instagram.com/reel/ABC123/"
+    ]
+    assert received_payload.get("resultsLimit") == 1
 
 
 @pytest.mark.asyncio

@@ -38,10 +38,14 @@ async def download_via_apify(
 
     async with httpx.AsyncClient(timeout=timeout_sec) as client:
         try:
+            # NOTA: el actor `apify/instagram-reel-scraper` usa el campo `username`
+            # como entrada generica que acepta usernames, profile URLs, IDs O direct reel URLs.
+            # Le pasamos la URL del Reel directo aqui. Ver schema en
+            # https://apify.com/apify/instagram-reel-scraper/input-schema
             resp = await client.post(
                 actor_url,
                 params={"token": api_token, "timeout": actor_timeout},
-                json={"directUrls": [url], "resultsLimit": 1},
+                json={"username": [url], "resultsLimit": 1},
             )
         except httpx.HTTPError as e:
             raise ApifyDownloadError(f"apify request failed: {e}") from e
