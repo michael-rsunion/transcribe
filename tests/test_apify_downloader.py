@@ -63,6 +63,33 @@ async def test_downloads_video_from_cdn_url(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_accepts_201_created(tmp_path, monkeypatch):
+    """Apify run-sync a veces devuelve 201 en vez de 200 - ambos son OK."""
+    cdn_url = "https://instagram.cdn.example/v/test.mp4"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "api.apify.com" in str(request.url):
+            return httpx.Response(201, json=[{"videoUrl": cdn_url}])
+        if str(request.url) == cdn_url:
+            return httpx.Response(200, content=b"fake_mp4_data" * 100)
+        return httpx.Response(404)
+
+    transport = httpx.MockTransport(handler)
+
+    class _FakeAsyncClient(httpx.AsyncClient):
+        def __init__(self, *a, **kw):
+            kw["transport"] = transport
+            super().__init__(*a, **kw)
+
+    monkeypatch.setattr("app.services.apify_downloader.httpx.AsyncClient", _FakeAsyncClient)
+
+    out = await download_via_apify(
+        "https://www.instagram.com/reel/X/", tmp_path, api_token="t"
+    )
+    assert out.exists()
+
+
+@pytest.mark.asyncio
 async def test_raises_when_apify_returns_error(tmp_path, monkeypatch):
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(500, text="actor failed")

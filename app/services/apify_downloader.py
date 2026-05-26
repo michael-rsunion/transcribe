@@ -50,7 +50,9 @@ async def download_via_apify(
         except httpx.HTTPError as e:
             raise ApifyDownloadError(f"apify request failed: {e}") from e
 
-        if resp.status_code != 200:
+        # Apify devuelve 200 o 201 (Created) en run-sync segun estado interno,
+        # ambos significan exito. Solo fallamos en 4xx/5xx.
+        if not (200 <= resp.status_code < 300):
             raise ApifyDownloadError(
                 f"apify HTTP {resp.status_code}: {resp.text[:200]}"
             )
